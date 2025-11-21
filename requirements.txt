@@ -1,0 +1,10 @@
+# Web App
+streamlit
+
+# Machine Learning
+scikit-learn
+joblib
+
+# Data Processing
+pandas
+numpy

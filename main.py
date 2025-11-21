@@ -1,6 +1,5 @@
 import streamlit as st
 import joblib
-import numpy as np
 import pandas as pd
 
 st.set_page_config(
@@ -16,7 +15,8 @@ def load_models():
         model_svm = joblib.load("model_linear_svm.pkl")
         model_ensemble = joblib.load("model_ensemble_voting.pkl")
         return model_bnb, model_svm, model_ensemble
-    except:
+    except Exception as e:
+        st.error(f"Error loading model: {e}")
         return None, None, None
 
 model_bnb, model_svm, model_ensemble = load_models()
@@ -37,7 +37,7 @@ with col1:
     Age = st.number_input("Age", 1, 120, 40)
     RestingBP = st.number_input("RestingBP", 0, 250, 120)
     Cholesterol = st.number_input("Cholesterol", 0, 600, 200)
-    FastingBS = st.selectbox("FastingBS (Fasting Blood Sugar > 120 mg/dl?)", [0, 1])
+    FastingBS = st.selectbox("FastingBS (>120 mg/dl?)", [0, 1])
 
 with col2:
     MaxHR = st.number_input("MaxHR", 50, 250, 150)
@@ -45,22 +45,12 @@ with col2:
     Sex = st.selectbox("Sex", ["M", "F"])
     ExerciseAngina = st.selectbox("Exercise Angina", ["N", "Y"])
 
-ChestPainType = st.selectbox(
-    "Chest Pain Type",
-    ["TA", "ATA", "NAP", "ASY"]
-)
+ChestPainType = st.selectbox("Chest Pain Type", ["TA", "ATA", "NAP", "ASY"])
+RestingECG = st.selectbox("RestingECG", ["Normal", "ST", "LVH"])
+ST_Slope = st.selectbox("ST Slope", ["Up", "Flat", "Down"])
 
-RestingECG = st.selectbox(
-    "Resting ECG",
-    ["Normal", "ST", "LVH"]
-)
-
-ST_Slope = st.selectbox(
-    "ST Slope",
-    ["Up", "Flat", "Down"]
-)
-
-input_data = pd.DataFrame([{
+# Input dataframe sesuai model
+input_df = pd.DataFrame([{
     "Age": Age,
     "RestingBP": RestingBP,
     "Cholesterol": Cholesterol,
@@ -78,14 +68,14 @@ if st.button("🔍 Prediksi", type="primary"):
 
     with st.spinner("Menghitung risiko..."):
 
-        # Prediksi semua model
-        pred_bnb = model_bnb.predict(input_data)[0]
-        pred_svm = model_svm.predict(input_data)[0]
-        pred_ensemble = model_ensemble.predict(input_data)[0]
+        # Karena pipeline sudah lengkap, tinggal langsung prediksi
+        pred_bnb = model_bnb.predict(input_df)[0]
+        pred_svm = model_svm.predict(input_df)[0]
+        pred_ensemble = model_ensemble.predict(input_df)[0]
 
-        prob_bnb = model_bnb.predict_proba(input_data)[0]
-        prob_svm = model_svm.predict_proba(input_data)[0]
-        prob_ensemble = model_ensemble.predict_proba(input_data)[0]
+        prob_bnb = model_bnb.predict_proba(input_df)[0]
+        prob_svm = model_svm.predict_proba(input_df)[0]
+        prob_ensemble = model_ensemble.predict_proba(input_df)[0]
 
         st.subheader("🎯 Hasil Prediksi (Ensemble)")
 
@@ -94,7 +84,7 @@ if st.button("🔍 Prediksi", type="primary"):
         else:
             st.success("### ✅ Risiko Rendah Penyakit Jantung")
 
-        st.info(f"Probabilitas (Risiko Tinggi): **{prob_ensemble[1]*100:.1f}%**")
+        st.info(f"Probabilitas Risiko Tinggi: **{prob_ensemble[1]*100:.1f}%**")
 
         st.subheader("📌 Perbandingan Model")
 
@@ -114,4 +104,3 @@ if st.button("🔍 Prediksi", type="primary"):
             st.metric("Ensemble",
                       "High" if pred_ensemble == 1 else "Low",
                       f"{prob_ensemble[1]*100:.1f}%")
-
